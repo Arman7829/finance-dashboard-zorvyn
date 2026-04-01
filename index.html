@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        :root{
+            --primary:#2563eb;
+            --primary-dark:#1d4ed8;
+            --success:#10b981;
+            --danger:#ef4444;
+            --warning:#f59e0b;
+            --bg:#f8fafc;
+            --card-bg:#ffffff;
+            --text:#1e293b;
+            --text-light:#64748b;
+            --border:#e2e8f0;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+        .app{max-width:1400px;margin:0 auto;padding:20px}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+        .header h1{font-size:1.75rem;font-weight:700;color:var(--primary)}
+        .header-actions{display:flex;gap:12px;align-items:center}
+        .btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.2s}
+        .btn-primary{background:var(--primary);color:white}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+        .btn-outline:hover{background:var(--border)}
+        .dark-mode{background:#0f172a;color:#f1f5f9}
+        .dark-mode .card{background:#1e293b;border-color:#334155}
+        .dark-mode .text-light{color:#94a3b8}
+        .card{background:var(--card-bg);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:20px}
+        .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+        .summary-card{display:flex;align-items:center;gap:16px}
+        .summary-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem}
+        .icon-income{background:rgba(16,185,129,0.1);color:var(--success)}
+        .icon-expense{background:rgba(239,68,68,0.1);color:var(--danger)}
+        .icon-balance{background:rgba(37,99,235,0.1);color:var(--primary)}
+        .icon-savings{background:rgba(245,158,11,0.1);color:var(--warning)}
+        .summary-content h3{font-size:0.875rem;font-weight:500;color:var(--text-light);margin-bottom:4px}
+        .summary-content .amount{font-size:1.5rem;font-weight:700}
+        .summary-content .sub{font-size:0.75rem;color:var(--text-light)}
+        .section{margin-bottom:24px}
+        .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+        .section-title{font-size:1.25rem;font-weight:600;display:flex;align-items:center;gap:8px}
+        .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+        .chart-container{height:300px;position:relative}
+        .transactions-section{margin-top:24px}
+        .filters{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+        .filters input,.filters select{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.875rem;background:var(--card-bg);color:var(--text)}
+        .filters input{flex:1;min-width:200px}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--border)}
+        th{font-weight:600;font-size:0.75rem;color:var(--text-light);text-transform:uppercase}
+        td{font-size:0.875rem}
+        .type-income{color:var(--success);font-weight:600}
+        .type-expense{color:var(--danger);font-weight:600}
+        .category-badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:0.75rem;font-weight:500;background:rgba(37,99,235,0.1);color:var(--primary)}
+        .pagination{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:0.875rem;color:var(--text-light)}
+        .insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+        .insight-card{border-left:4px solid var(--primary)}
+        .insight-card h4{font-size:1rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+        .insight-card p{font-size:0.875rem;color:var(--text-light)}
+        .score-circle{width:60px;height:60px;border-radius:50%;background:var(--success);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.125rem}
+        .health-section{display:flex;align-items:center;gap:16px}
+        @media(max-width:768px){
+            .header{flex-direction:column;gap:12px;text-align:center}
+            .header-actions{width:100%;justify-content:center}
+            .charts-grid{grid-template-columns:1fr}
+            .filters input{width:100%}
+            .summary-grid{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const transactions = [
+            { id: 1, date: '2026-03-28', description: 'Salary - March', category: 'Salary', type: 'income', amount: 85000 },
+            { id: 2, date: '2026-03-27', description: 'Rent Payment', category: 'Housing', type: 'expense', amount: 25000 },
+            { id: 3, date: '2026-03-26', description: 'Grocery Store', category: 'Food', type: 'expense', amount: 4500 },
+            { id: 4, date: '2026-03-25', description: 'Freelance Project', category: 'Freelance', type: 'income', amount: 15000 },
+            { id: 5, date: '2026-03-24', description: 'Electric Bill', category: 'Utilities', type: 'expense', amount: 2800 },
+            { id: 6, date: '2026-03-23', description: 'Internet Bill', category: 'Utilities', type: 'expense', amount: 1200 },
+            { id: 7, date: '2026-03-22', description: 'Restaurant Dinner', category: 'Food', type: 'expense', amount: 1800 },
+            { id: 8, date: '2026-03-21', description: 'Investment Returns', category: 'Investment', type: 'income', amount: 8500 },
+            { id: 9, date: '2026-03-20', description: 'Petrol', category: 'Transport', type: 'expense', amount: 2200 },
+            { id: 10, date: '2026-03-19', description: 'Netflix Subscription', category: 'Entertainment', type: 'expense', amount: 499 },
+            { id: 11, date: '2026-03-18', description: 'Online Shopping', category: 'Shopping', type: 'expense', amount: 3500 },
+            { id: 12, date: '2026-03-17', description: 'Gym Membership', category: 'Health', type: 'expense', amount: 2000 },
+            { id: 13, date: '2026-03-16', description: 'Freelance Payment', category: 'Freelance', type: 'income', amount: 12000 },
+            { id: 14, date: '2026-03-15', description: 'Mobile Recharge', category: 'Utilities', type: 'expense', amount: 399 },
+            { id: 15, date: '2026-03-14', description: 'Medical Expense', category: 'Health', type: 'expense', amount: 5600 },
+            { id: 16, date: '2026-03-13', description: 'Coffee Shop', category: 'Food', type: 'expense', amount: 350 },
+            { id: 17, date: '2026-03-12', description: 'Dividend Income', category: 'Investment', type: 'income', amount: 3200 },
+            { id: 18, date: '2026-03-11', description: 'Uber Rides', category: 'Transport', type: 'expense', amount: 890 },
+            { id: 19, date: '2026-03-10', description: 'Book Purchase', category: 'Education', type: 'expense', amount: 1200 },
+            { id: 20, date: '2026-03-09', description: 'Insurance Premium', category: 'Insurance', type: 'expense', amount: 8500 }
+        ];
+        let currentFilter = { search: '', type: 'all', category: 'all', sort: 'date-desc' };
+        let charts = {};
+        function formatCurrency(amount) {
+            return 'Rs ' + amount.toLocaleString('en-IN');
+        }
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        function calculateSummary() {
+            const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            const balance = income - expenses;
+            const savingsRate = ((income - expenses) / income * 100).toFixed(1);
+            const catSpending = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => {
+                catSpending[t.category] = (catSpending[t.category] || 0) + t.amount;
+            });
+            const topSpending = Object.entries(catSpending).sort((a, b) => b[1] - a[1])[0];
+            const recentExpenses = transactions.filter(t => t.type === 'expense').slice(0, 5).reduce((s, t) => s + t.amount, 0);
+            return { income, expenses, balance, savingsRate, topSpending, recentExpenses, catSpending };
+        }
+        function renderSummary(summary) {
+            return '<div class="section"><div class="section-header"><h2 class="section-title"><i class="fas fa-chart-line"></i> Dashboard Overview</h2></div><div class="summary-grid">' +
+                '<div class="card summary-card"><div class="summary-icon icon-income"><i class="fas fa-arrow-down"></i></div><div class="summary-content"><h3>Total Income</h3><div class="amount">' + formatCurrency(summary.income) + '</div><div class="sub">This month</div></div></div>' +
+                '<div class="card summary-card"><div class="summary-icon icon-expense"><i class="fas fa-arrow-up"></i></div><div class="summary-content"><h3>Total Expenses</h3><div class="amount">' + formatCurrency(summary.expenses) + '</div><div class="sub">This month</div></div></div>' +
+                '<div class="card summary-card"><div class="summary-icon icon-balance"><i class="fas fa-wallet"></i></div><div class="summary-content"><h3>Net Balance</h3><div class="amount">' + formatCurrency(summary.balance) + '</div><div class="sub">' + (summary.balance >= 0 ? 'Positive cash flow' : 'Negative cash flow') + '</div></div></div>' +
+                '<div class="card summary-card"><div class="summary-icon icon-savings"><i class="fas fa-percentage"></i></div><div class="summary-content"><h3>Savings Rate</h3><div class="amount">' + summary.savingsRate + '%</div><div class="sub">' + (parseFloat(summary.savingsRate) >= 50 ? 'Excellent' : 'Good') + '</div></div></div>' +
+                '<div class="card summary-card"><div class="summary-icon icon-expense"><i class="fas fa-shopping-bag"></i></div><div class="summary-content"><h3>Top Spending</h3><div class="amount">' + formatCurrency(summary.topSpending[1]) + '</div><div class="sub">Category: ' + summary.topSpending[0] + '</div></div></div>' +
+                '<div class="card summary-card"><div class="summary-icon icon-expense"><i class="fas fa-clock"></i></div><div class="summary-content"><h3>Recent Expenses</h3><div class="amount">' + formatCurrency(summary.recentExpenses) + '</div><div class="sub">Last 5 transactions</div></div></div>' +
+                '</div></div>';
+        }
+        function renderCharts(summary) {
+            setTimeout(() => {
+                const pieCtx = document.getElementById('pieChart');
+                const barCtx = document.getElementById('barChart');
+                const lineCtx = document.getElementById('lineChart');
+                const doughnutCtx = document.getElementById('doughnutChart');
+                if (charts.pie) charts.pie.destroy();
+                if (charts.bar) charts.bar.destroy();
+                if (charts.line) charts.line.destroy();
+                if (charts.doughnut) charts.doughnut.destroy();
+                const catLabels = Object.keys(summary.catSpending);
+                const catValues = Object.values(summary.catSpending);
+                const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                charts.pie = new Chart(pieCtx, {
+                    type: 'pie',
+                    data: { labels: catLabels, datasets: [{ data: catValues, backgroundColor: colors }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Expense by Category' } } }
+                });
+                charts.bar = new Chart(barCtx, {
+                    type: 'bar',
+                    data: { labels: catLabels, datasets: [{ label: 'Amount', data: catValues, backgroundColor: colors }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Category Breakdown' } }, scales: { y: { beginAtZero: true } } }
+                });
+                const days = [];
+                const incData = [];
+                const expData = [];
+                let balance = 0;
+                const sorted = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+                sorted.forEach(t => {
+                    days.push(formatDate(t.date));
+                    if (t.type === 'income') { balance += t.amount; incData.push(balance); expData.push(balance); }
+                    else { balance -= t.amount; incData.push(balance); expData.push(balance); }
+                });
+                charts.line = new Chart(lineCtx, {
+                    type: 'line',
+                    data: { labels: days, datasets: [{ label: 'Cumulative Balance', data: expData, borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.1)' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Income vs Expenses Trend' } }, scales: { y: { beginAtZero: true } } }
+                });
+                const budgetData = [summary.expenses, Math.max(0, summary.balance)];
+                charts.doughnut = new Chart(doughnutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Spent', 'Remaining'], datasets: [{ data: budgetData, backgroundColor: ['#ef4444', '#10b981'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Budget Distribution' } } }
+                });
+            }, 100);
+        }
+        function renderFinancialAnalytics(summary) {
+            return '<div class="section"><div class="section-header"><h2 class="section-title"><i class="fas fa-chart-pie"></i> Financial Analytics</h2></div>' +
+                '<div class="charts-grid">' +
+                '<div class="card"><canvas id="pieChart"></canvas></div>' +
+                '<div class="card"><canvas id="barChart"></canvas></div>' +
+                '<div class="card"><canvas id="lineChart"></canvas></div>' +
+                '<div class="card"><canvas id="doughnutChart"></canvas></div>' +
+                '</div></div>';
+        }
+        function renderTransactions() {
+            let filtered = [...transactions];
+            if (currentFilter.search) filtered = filtered.filter(t => t.description.toLowerCase().includes(currentFilter.search.toLowerCase()));
+            if (currentFilter.type !== 'all') filtered = filtered.filter(t => t.type === currentFilter.type);
+            if (currentFilter.category !== 'all') filtered = filtered.filter(t => t.category === currentFilter.category);
+            if (currentFilter.sort === 'date-desc') filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            else if (currentFilter.sort === 'date-asc') filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+            else if (currentFilter.sort === 'amount-desc') filtered.sort((a, b) => b.amount - a.amount);
+            else if (currentFilter.sort === 'amount-asc') filtered.sort((a, b) => a.amount - b.amount);
+            else if (currentFilter.sort === 'name-asc') filtered.sort((a, b) => a.description.localeCompare(b.description));
+            else if (currentFilter.sort === 'name-desc') filtered.sort((a, b) => b.description.localeCompare(a.description));
+            let rows = filtered.map((t, i) => '<tr><td>' + (i + 1) + '</td><td>' + formatDate(t.date) + '</td><td>' + t.description + '</td><td><span class="category-badge">' + t.category + '</span></td><td class="type-' + t.type + '">' + t.type.charAt(0).toUpperCase() + t.type.slice(1) + '</td><td class="type-' + t.type + '">' + (t.type === 'income' ? '+' : '-') + formatCurrency(t.amount) + '</td></tr>').join('');
+            return '<div class="section transactions-section"><div class="section-header"><h2 class="section-title"><i class="fas fa-list"></i> Transactions</h2></div>' +
+                '<div class="card">' +
+                '<div class="filters">' +
+                '<input type="text" placeholder="Search transactions..." value="' + currentFilter.search + '" onchange="handleSearch(this.value)">' +
+                '<select onchange="handleTypeFilter(this.value)"><option value="all" ' + (currentFilter.type === 'all' ? 'selected' : '') + '>All Types</option><option value="income" ' + (currentFilter.type === 'income' ? 'selected' : '') + '>Income</option><option value="expense" ' + (currentFilter.type === 'expense' ? 'selected' : '') + '>Expense</option></select>' +
+                '<select onchange="handleCategoryFilter(this.value)"><option value="all" ' + (currentFilter.category === 'all' ? 'selected' : '') + '>All Categories</option>' +
+                Array.from(new Set(transactions.map(t => t.category))).map(c => '<option value="' + c + '" ' + (currentFilter.category === c ? 'selected' : '') + '>' + c + '</option>').join('') +
+                '</select>' +
+                '<select onchange="handleSort(this.value)"><option value="date-desc" ' + (currentFilter.sort === 'date-desc' ? 'selected' : '') + '>Date (Newest)</option><option value="date-asc" ' + (currentFilter.sort === 'date-asc' ? 'selected' : '') + '>Date (Oldest)</option><option value="amount-desc" ' + (currentFilter.sort === 'amount-desc' ? 'selected' : '') + '>Amount (High-Low)</option><option value="amount-asc" ' + (currentFilter.sort === 'amount-asc' ? 'selected' : '') + '>Amount (Low-High)</option><option value="name-asc" ' + (currentFilter.sort === 'name-asc' ? 'selected' : '') + '>Name (A-Z)</option><option value="name-desc" ' + (currentFilter.sort === 'name-desc' ? 'selected' : '') + '>Name (Z-A)</option></select>' +
+                '</div>' +
+                '<div class="no-scroll-x"><table><thead><tr><th>#</th><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+                '<div class="pagination"><span>Showing ' + filtered.length + ' of ' + transactions.length + ' transactions</span></div>' +
+                '</div></div>';
+        }
+        function renderInsights(summary) {
+            const healthScore = Math.min(100, Math.max(0, 100 - (summary.expenses / summary.income * 50) + (parseFloat(summary.savingsRate) / 2)));
+            return '<div class="section"><div class="section-header"><h2 class="section-title"><i class="fas fa-lightbulb"></i> Insights & Recommendations</h2></div>' +
+                '<div class="insights-grid">' +
+                '<div class="card insight-card"><h4><i class="fas fa-piggy-bank"></i> Savings Analysis</h4><p>You are saving ' + summary.savingsRate + '% of your income. ' + (parseFloat(summary.savingsRate) >= 50 ? 'Excellent job! Keep it up!' : 'Consider reducing expenses to save more.') + '</p></div>' +
+                '<div class="card insight-card"><h4><i class="fas fa-chart-bar"></i> Top Spending Categories</h4><p>Your highest expenses are in ' + summary.topSpending[0] + ', Health, Insurance. Consider reviewing these for potential savings.</p></div>' +
+                '<div class="card insight-card"><h4><i class="fas fa-heartbeat"></i> Financial Health Score</h4><div class="health-section"><div class="score-circle">' + Math.round(healthScore) + '</div><p>Your financial health score is ' + Math.round(healthScore) + '/100. ' + (healthScore >= 80 ? 'Excellent. Keep tracking your finances regularly.' : 'Good, but there is room for improvement.') + '</p></div></div>' +
+                '<div class="card insight-card"><h4><i class="fas fa-exclamation-triangle"></i> Budget Alert</h4><p>Your expenses (' + formatCurrency(summary.expenses) + ') are within your income (' + formatCurrency(summary.income) + '). You have a healthy surplus this month.</p></div>' +
+                '</div></div>';
+        }
+        function handleSearch(val) { currentFilter.search = val; render(); }
+        function handleTypeFilter(val) { currentFilter.type = val; render(); }
+        function handleCategoryFilter(val) { currentFilter.category = val; render(); }
+        function handleSort(val) { currentFilter.sort = val; render(); }
+        function handleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            const btn = document.getElementById('darkModeBtn');
+            if (btn) btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
+        function handleViewerMode() {
+            const app = document.getElementById('app');
+            app.classList.toggle('viewer-mode');
+            const btn = document.getElementById('viewerModeBtn');
+            if (btn) btn.textContent = app.classList.contains('viewer-mode') ? 'Edit Mode' : 'Viewer Mode';
+        }
+        function renderHeader() {
+            const isDark = document.body.classList.contains('dark-mode');
+            return '<div class="header"><h1><i class="fas fa-chart-line"></i> Finance Dashboard</h1><div class="header-actions">' +
+                '<button class="btn btn-outline" id="viewerModeBtn" onclick="handleViewerMode()">Viewer Mode</button>' +
+                '<button class="btn btn-outline" id="darkModeBtn" onclick="handleDarkMode()"><i class="fas fa-' + (isDark ? 'sun' : 'moon') + '"></i></button>' +
+                '</div></div>';
+        }
+        function render() {
+            const summary = calculateSummary();
+            document.getElementById('app').innerHTML = renderHeader() + renderSummary(summary) + renderFinancialAnalytics(summary) + renderTransactions() + renderInsights(summary);
+            renderCharts(summary);
+        }
+        document.addEventListener('DOMContentLoaded', render);
+    </script>
+</body>
+</html>
